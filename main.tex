@@ -1,0 +1,40 @@
+% Build from this src/ directory with: make (or from the root: make -C src)
+% Edit report-info.tex for title-page details and sections/ for the report.
+\documentclass[11pt,a4paper,oneside,openany]{report}
+
+\input{report-info}
+\input{preamble}
+
+\begin{document}
+
+\hypersetup{pageanchor=false}
+\input{titlepage}
+\pagenumbering{roman}
+\hypersetup{pageanchor=true}
+\input{sections/00-abstract}
+\tableofcontents
+% Uncomment these when the report contains enough figures or tables to warrant lists.
+% \listoffigures
+% \listoftables
+\clearpage
+\pagenumbering{arabic}
+
+\input{sections/carr-kennedy-1994.tex}
+\input{sections/carr-1996.tex}
+% \input{sections/01-introduction}
+% \input{sections/02-background}
+% \input{sections/03-literature-review}
+\input{sections/04-worked-example}
+% \input{sections/05-evaluation}
+% \input{sections/06-conclusion}
+
+\clearpage
+\phantomsection
+\addcontentsline{toc}{chapter}{Bibliography}
+\bibliographystyle{plainnat}
+\bibliography{references}
+
+\appendix
+\input{sections/appendix-latex-guide}
+
+\end{document}

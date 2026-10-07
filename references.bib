@@ -1,0 +1,124 @@
+% Entries transcribed from papers/bibliography.md and the local paper copies.
+% Only cited entries appear in the bibliography. Add new papers here.
+% Preserve acronyms and proper names in titles with braces, e.g. {LLVM}.
+
+@inproceedings{wolfLam1991locality,
+  author    = {Wolf, Michael E. and Lam, Monica S.},
+  title     = {A Data Locality Optimizing Algorithm},
+  booktitle = {Proceedings of the ACM SIGPLAN 1991 Conference on Programming Language Design and Implementation},
+  series    = {PLDI '91},
+  year      = {1991},
+  pages     = {30--44},
+  publisher = {ACM}
+}
+
+@article{wolfLam1991parallel,
+  author  = {Wolf, Michael E. and Lam, Monica S.},
+  title   = {A Loop Transformation Theory and an Algorithm to Maximize Parallelism},
+  journal = {IEEE Transactions on Parallel and Distributed Systems},
+  volume  = {2},
+  number  = {4},
+  year    = {1991},
+  pages   = {452--471}
+}
+
+@inproceedings{wolfMaydanChen1996,
+  author    = {Wolf, Michael E. and Maydan, Dror E. and Chen, Ding-Kai},
+  title     = {Combining Loop Transformations Considering Caches and Scheduling},
+  booktitle = {Proceedings of the 29th Annual ACM/IEEE International Symposium on Microarchitecture},
+  series    = {MICRO 29},
+  year      = {1996},
+  pages     = {274--286},
+  publisher = {IEEE Computer Society}
+}
+
+@article{mckinleyCarrTseng1996,
+  author  = {McKinley, Kathryn S. and Carr, Steve and Tseng, Chau-Wen},
+  title   = {Improving Data Locality with Loop Transformations},
+  journal = {ACM Transactions on Programming Languages and Systems},
+  volume  = {18},
+  number  = {4},
+  year    = {1996},
+  pages   = {424--453}
+}
+
+@article{carrKennedy1994,
+  author  = {Carr, Steve and Kennedy, Ken},
+  title   = {Improving the Ratio of Memory Operations to Floating-Point Operations in Loops},
+  journal = {ACM Transactions on Programming Languages and Systems},
+  volume  = {16},
+  number  = {6},
+  year    = {1994},
+  pages   = {1768--1810}
+}
+
+@inproceedings{carrMckinleyTseng1994,
+  author    = {Carr, Steve and McKinley, Kathryn S. and Tseng, Chau-Wen},
+  title     = {Compiler Optimizations for Improving Data Locality},
+  booktitle = {Proceedings of the Sixth International Conference on Architectural Support for Programming Languages and Operating Systems},
+  series    = {ASPLOS VI},
+  year      = {1994},
+  pages     = {252--262},
+  publisher = {ACM}
+}
+
+% The Carr reading-list entry has an incomplete page range; intentionally omitted.
+@inproceedings{carr1996,
+  author    = {Carr, Steve},
+  title     = {Combining Optimization for Cache and Instruction-Level Parallelism},
+  booktitle = {Proceedings of the 1996 Conference on Parallel Architectures and Compilation Techniques},
+  series    = {PACT '96},
+  year      = {1996},
+  publisher = {IEEE Computer Society}
+}
+
+
+% Verified against the thesis title page in papers/carr-phd.pdf (February 1993).
+% Its technical-report cover is dated September 1992 (CRPC-TR92222-S).
+@phdthesis{carrPhd,
+  author  = {Carr, Steve},
+  title   = {Memory-Hierarchy Management},
+  school  = {Rice University},
+  year    = {1993},
+  month   = feb,
+  address = {Houston, Texas}
+}
+
+@article{sethiUllman1970,
+  author = {Sethi, Ravi and Ullman, J. D.},
+  title = {The Generation of Optimal Code for Arithmetic Expressions},
+  year = {1970},
+  issue_date = {Oct. 1970},
+  publisher = {Association for Computing Machinery},
+  address = {New York, NY, USA},
+  volume = {17},
+  number = {4},
+  issn = {0004-5411},
+  url = {https://doi-org.recursos.biblioteca.upc.edu/10.1145/321607.321620},
+  doi = {10.1145/321607.321620},
+  abstract = {The problem of evaluating arithmetic expressions on a machine with N ≥ 1 general purpose registers is considered. It is initially assumed that no algebraic laws apply to the operators and operands in the expression. An algorithm for evaluation of expressions under this assumption is proposed, and it is shown to take the shortest possible number of instructions. It is then assumed that certain operators are commutative or both commutative and associative. In this case a procedure is given for finding an expression equivalent to a given one and having the shortest possible evaluation sequence. It is then shown that the algorithms presented here also minimize the number of storage references in the evaluation.},
+  journal = {J. ACM},
+  month = oct,
+  pages = {715–728},
+  numpages = {14}
+}
+
+@article{callahanEtAl1990,
+  author = {Callahan, David and Carr, Steve and Kennedy, Ken},
+  title = {Improving register allocation for subscripted variables},
+  year = {1990},
+  issue_date = {Jun. 1990},
+  publisher = {Association for Computing Machinery},
+  address = {New York, NY, USA},
+  volume = {25},
+  number = {6},
+  issn = {0362-1340},
+  url = {https://doi-org.recursos.biblioteca.upc.edu/10.1145/93548.93553},
+  doi = {10.1145/93548.93553},
+  abstract = {Most conventional compilers fail to allocate array elements to registers because standard data-flow analysis treats arrays like scalars, making it impossible to analyze the definitions and uses of individual array elements. This deficiency is particularly troublesome for floating-point registers, which are most often used as temporary repositories for subscripted variables.In this paper, we present a source-to-source transformation, called scalar replacement, that finds opportunities for reuse of subscripted variables and replaces the references involved by references to temporary scalar variables. The objective is to increase the likelihood that these elements will be assigned to registers by the coloring-based register allocators found in most compilers. In addition, we present transformations to improve the overall effectiveness of scalar replacement and show how these transformations can be applied in a variety of loop nest types. Finally, we present experimental results showing that these techniques are extremely effective—capable of achieving integer factor speedups over code generated by good optimizing compilers of conventional design.},
+  journal = {SIGPLAN Not.},
+  month = jun,
+  pages = {53–65},
+  numpages = {13}
+}
+

@@ -1,0 +1,89 @@
+\chapter{LaTeX Usage Examples}
+\label{app:latex}
+\exampleparagraph{This appendix is a quick reference for writing the report.
+Remove its input line from \texttt{main.tex} before submission if it is not needed.}
+
+\section{Citations and cross-references}
+Add entries to \texttt{references.bib}, then cite their keys:
+\begin{lstlisting}[language=TeX,numbers=none]
+\citet{wolfLam1991locality} describe a locality algorithm.
+Related work considers loop transformations
+\citep{wolfLam1991locality,mckinleyCarrTseng1996}.
+\citep[pp.~30--31]{wolfLam1991locality}
+
+\cref{chap:background}
+\cref{fig:access-pattern}
+\cref{tab:results}
+\cref{lst:baseline}
+\cref{eq:row-major}
+\Cref{fig:access-pattern} % Capitalise at the start of a sentence.
+\cref{lst:baseline,lst:interchanged} % Multiple references.
+\end{lstlisting}
+Put a figure or table label immediately after its caption. Put equation labels
+inside the equation environment. Compile the document and bibliography using
+the provided build command so that citations and references are resolved.
+Use \verb|\cref{...}| within a sentence and \verb|\Cref{...}| at its beginning.
+The object name (such as ``figure'', ``equation'', or ``listing'') is inserted
+automatically, so do not write it again before the command. Bibliographic
+citations still use \verb|\citet| and \verb|\citep|.
+
+\section{Mathematics}
+\begin{lstlisting}[language=TeX,numbers=none]
+Inline notation: $\vect{i}\in\Z^n$.
+\begin{equation}
+  W(B) = 3eB^2 \leq \alpha C
+  \label{eq:your-new-label}
+\end{equation}
+\begin{align}
+  x &= a+b, \\
+  y &= c+d.
+\end{align}
+\end{lstlisting}
+The template loads \texttt{amsmath}, \texttt{amssymb}, \texttt{mathtools}, and
+\texttt{amsthm}; the background chapter also demonstrates matrices and a definition.
+
+% Start the second guide page here so the complete example stays together.
+\clearpage
+\section{Code and external source files}
+For short snippets, use an inline listing environment:
+\begin{latexexample}
+\begin{lstlisting}[language=Python,caption={Your caption.},
+                   label={lst:your-label}]
+for tile in tiles:
+    process(tile)
+\end{lstlisting}
+\end{latexexample}
+For reusable code, keep it in \texttt{code/} and include it as follows:
+\begin{lstlisting}[language=TeX,numbers=none]
+\lstinputlisting[language=C,caption={Your caption.},
+                 label={lst:your-file}]{code/your-file.c}
+\end{lstlisting}
+\texttt{listings} needs no external syntax-highlighting tool or shell escape.
+Give a referenced listing both a caption and a label so it has its own number.
+The example C files use C99 variable-length array parameters and are intended
+as explanations of loop order rather than a benchmark harness.
+
+\section{Figures and tables}
+Save images under \texttt{figures/}. Prefer PDF for vector plots and PNG or JPEG
+for raster images. A basic figure looks like this:
+\begin{lstlisting}[language=TeX,numbers=none]
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.8\linewidth]{your-figure.pdf}
+  \caption{Explain what the figure shows and cite its source.}
+  \label{fig:your-label}
+\end{figure}
+\end{lstlisting}
+% \Cref{chap:example} shows side-by-side panels with \texttt{subcaption}.
+% Use \texttt{booktabs} rules for tables and \texttt{tabularx} for wrapping columns;
+% use \texttt{longtable} if a table must span pages. Let figures and tables float
+% with \texttt{[htbp]} unless their exact position is essential.
+
+\section{Small formatting details}
+Escape reserved characters: \verb|\%|, \verb|\&|, \verb|\_|, and \verb|\#|.
+Use \verb|~| for a non-breaking space, as in \verb|Section~1|.
+Smart references such as \verb|\cref{fig:access-pattern}| supply the name and spacing.
+Use \verb|\footnote{...}| for footnotes\footnote{This is an example footnote.},
+\verb|\url{https://example.org}| for URLs, and
+\verb|\href{URL}{text}| for links.
+Use \verb|\todo{...}| for visible draft reminders.

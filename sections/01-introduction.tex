@@ -1,0 +1,35 @@
+\chapter{Introduction}
+\label{chap:introduction}
+
+\section{Motivation}
+Execution order determines when a program accesses its data. A compiler can
+therefore change the opportunities for cache reuse by transforming a loop nest,
+provided that the transformed program preserves the required semantics.
+\citet{wolfLam1991locality} present a locality-oriented loop transformation
+algorithm; \citet{mckinleyCarrTseng1996} provide another foundation for examining
+locality through loop transformations.
+
+\exampleparagraph{The citations above illustrate narrative citations using
+\texttt{\string\citet}. A parenthetical citation can instead be written using
+\texttt{\string\citep}, as in the next paragraph.}
+
+The selected literature gives a starting point for discussing locality alongside
+other optimisation concerns, including instruction scheduling and memory-operation
+costs \citep{wolfMaydanChen1996,carr1996,carrKennedy1994}.
+
+\section{Scope and research questions}
+The report can be organised around the following questions:
+\begin{enumerate}
+  \item How do the selected papers represent data reuse and locality?
+  \item Which loop transformations are considered, and how is legality checked?
+  \item How do the approaches estimate profitability and account for the target machine?
+  \item What evidence supports their conclusions, and what are their limitations?
+\end{enumerate}
+\todo{Adapt these questions to the papers you have read and the assignment brief.}
+
+\section{Report organisation}
+\Cref{chap:background} introduces notation and a simple cost model.
+\Cref{chap:literature} provides a framework for comparing the papers.
+\Cref{chap:example} demonstrates a loop transformation, and
+\cref{chap:evaluation} outlines an evaluation methodology.
+\Cref{chap:conclusion} is reserved for the final synthesis.

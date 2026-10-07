@@ -1,0 +1,1521 @@
+\chapter{Carr and Kennedy (1994)}
+\label{chap:ck94}
+
+% Paper-specific labels: chap:/sec:/eq:/lst:/fig:ck94-<topic>.
+\section{Array References}
+\label{sec:ck94-array-references}
+
+We distinguish between a \textbf{static} array reference and
+an \textbf{execution} of an array reference.
+
+A \textbf{static reference} maps an iteration vector (a point in the
+iteration space) to an array element. With $n$ enclosing loops and $r$
+array dimensions, we write
+\begin{equation}
+  u: \mathbf{I} \in \mathbb{Z}^{n} \longmapsto
+  A[f_{1}(\mathbf{I})]\cdots[f_{r}(\mathbf{I})].
+  \label{eq:ck94-static-reference}
+\end{equation}
+For a two-dimensional array, this becomes
+$(i,j) \mapsto A[f_{1}(i,j)][f_{2}(i,j)]$.
+
+Let $\mathbb{M}$ denote the set of static memory references, so
+$u \in \mathbb{M}$.
+
+It can be expressed in a more compressed form as a \textbf{matrix
+transformation}.
+\todo{define matrix transformation}
+
+A \textbf{dynamic execution} of a reference is obtained giving the concrete value of the
+index vector.
+For example, when $i=1, j=2$, the dynamic execution of $u \coloneqq A[i][j]$ is
+$A[1][2]$, mathematically, it is denoted as $u@(1,2)$.
+
+\subsection{Variant and Invariant References}
+
+A \textbf{single induction variable (SIV) subscript} reference contains
+at most one loop induction variable in each subscript position.
+
+\textbf{Variant} and \textbf{invariant} memory refereces are subtypes of SIV
+subscript memory references. They are the most prominent types of references
+\cite{carrKennedy1994}.
+
+Their dependencies can be easily constructed and their distance vectors can
+be found using \cref{eq:ck94-unrolled-distance}, which can be used as part of
+the objective function in optimisaing loop balance.
+
+A loop nest is denoted as $\Lambda=(\lambda_1,\ldots,\lambda_N)$, where
+$\lambda_r$ is the loop at nesting level $1 \le r \le N$, numbered
+from outermost ($\lambda_1$) to innermost ($\lambda_N$). When its
+induction-variable names are distinct, let $\operatorname{IV}(\Lambda)$ be
+their set and define
+$\ell_{\Lambda}:\operatorname{IV}(\Lambda)\to\{1,\ldots,N\}$ by
+$\ell_{\Lambda}(x)=r$ if $x$ is the induction variable of $\lambda_r$.
+The mapping is local to $\Lambda$: the same name can denote a different level
+in another nest. Thus a loop named by its induction variable $x$ is
+$\lambda_{\ell_{\Lambda}(x)}$; subscripts on $\lambda$ always denote nesting levels.
+
+\begin{lstlisting}[label={lst:ck94-variant-invariant-references},
+language=C,caption={Loop Variant and Invariant References.}]
+for (int i = 0; i < N; i++) {
+  for (int j = 0; j < N; j++) {
+      A[i][j] = B[i] * C[j];
+  }
+}
+\end{lstlisting}
+
+
+In \cref{lst:ck94-variant-invariant-references},
+$\ell_{\Lambda}(i)=1$ and $\ell_{\Lambda}(j)=2$. Thus $B[i]$ is invariant
+with respect to $\lambda_{\ell_{\Lambda}(j)}=\lambda_2$, while $C[j]$ is
+invariant with respect to $\lambda_{\ell_{\Lambda}(i)}=\lambda_1$.
+
+If a specific reference $v$ is invariant w.r.t. a loop $\lambda_{i}$, then
+$\lambda_{i}$ is $v$-invariant.
+
+If there exsists any reference that is invariant w.r.t a loop $\lambda_{i}$,
+$\lambda_{i}$ is reference-invariant.
+
+So $\lambda_1$ is $C[j]$-invariant and $\lambda_2$ is
+$B[i]$-invariant. Both $\lambda_1$ and $\lambda_2$ are reference-invariant.
+
+\section{Reference Dependency Representation}
+Here we concern only about two memory references that accesses the
+\textbf{same memory location}.
+
+For \textbf{two references $u$ and $v$ contained in $n$ common loops}, seperate
+executions of these references can be described with an \textit{iteration
+vector}
+$\mathbf{I} \in \mathbb{Z}^{n}$.
+
+\subsection{Distance Vector}
+Suppose executions $u@(\mathbf{I}_{u})$ and $v@(\mathbf{I}_{v})$
+access the same element. Their \textbf{distance vector} (from $u$ to $v$) is
+\begin{equation}
+  \mathbf{d}_{u\to v} = \mathbf{I}_{v} - \mathbf{I}_{u}.
+  \label{eq:ck94-distance-vector}
+\end{equation}
+
+
+Here, $u$ and $v$ must reference the same array, we do \textbf{not}
+consider references to two different arrays because they do not reult benefits
+in cache hit.
+
+Note that even for two references with deterministic iteration index to memory
+address functions, the distance vector may not be unique.
+
+In \cref{lst:ck94-nonunique-distance}, we have $u \coloneqq A[2 \cdot i]$ and $v \coloneqq
+A[i]$. The distance vectors of $u \rightarrow v$ dependency forms a set
+% This is an instance of a definition for one example, so leave it unnumbered.
+\[
+\mathcal{D}_{u \rightarrow v}
+= \{(i): 0 \le i < N,\; 2i < N\}.
+\]
+Here the write $u$ occurs at iteration $i$ and the matching read $v$ at
+iteration $2i$; both iterations must be within the loop bounds.
+
+\begin{lstlisting}[label={lst:ck94-nonunique-distance},
+language=C, caption={Non-unique Distance Vector Example}]
+for (int i = 0; i < N; i++) {
+  A[i * 2] /* u */  = /* ... */;
+  /* ... */         = A[i] /* v */;
+}
+\end{lstlisting}
+
+In general, for any dependency execution $u \rightarrow v$, the set of
+dependency vector is defined as
+\begin{equation}
+\mathcal{D}_{u \rightarrow v}
+  = \{\mathbf{I}_{v} - \mathbf{I}_{u}:
+  u@(\mathbf{I}_{u}) = v@(\mathbf{I}_{v})\}.
+  \label{eq:ck94-distance-vector-set}
+\end{equation}
+
+By \cref{eq:ck94-distance-vector}, the dependence vectors between two references
+can be calculated either way.
+\[
+\mathbf{d}_{u \rightarrow v}= - \mathbf{d}_{v \rightarrow u}
+\]
+
+Hence we cannot be sure about that \textit{without a iteration order}
+for two references, e.g. a write reference $W$ and a read reference $R$,
+whether this is a WAR or RAW dependency.
+
+In a \textbf{normalised sequential loop nest}, iterations execute in
+lexicographic order. With the destination-minus-origin convention of
+\cref{eq:ck94-distance-vector}, this gives
+\begin{equation}
+  \begin{cases}
+    u \rightarrow v &\text{if } \mathbf{d}_{u\to v} \succ_{\mathrm{lex}} \mathbf{0}, \\
+    v \rightarrow u &\text{if } \mathbf{d}_{u\to v} \prec_{\mathrm{lex}} \mathbf{0}, \\
+    \text{inspect statement order} &\text{if } \mathbf{d}_{u\to v} = \mathbf{0}.
+  \end{cases}
+  \label{eq:ck94-dependence-order}
+\end{equation}
+The first nonzero component of $(0,0,-1,1)$ is negative, so the
+inter-iteration ordering is $R\rightarrow W$ if this vector was computed
+as $\mathbf{d}_{W\to R}$. The access types alone do not establish RAW.
+
+When $\left(\mathbf{d}_{u \rightarrow v}\right)_{i} = 0$, we say that the edge
+$e = \left\langle u, v \right\rangle$ is invariant w.r.t. loop $\lambda_{i}$,
+denoted as
+\[
+  Invar(e, \lambda_{i})
+\]
+
+\subsection{Direction Vector}
+The direction vector $\mathbf{D}$ can be a more compressed (but lossy) representation of the
+distance vector set $\mathcal{D}$.
+\begin{equation}
+  \label{eq:ck94-direction-vector}
+\mathbf{D}_{i}=
+\begin{dcases}
+  \ge & \text{if } \forall \mathbf{d} \in \mathcal{D}: d_{i} \ge 0 \\
+  > & \text{if } \forall \mathbf{d} \in \mathcal{D}: d_{i} > 0 \\
+  = & \text{if } \forall \mathbf{d} \in \mathcal{D}: d_{i} = 0 \\
+  < & \text{if } \forall \mathbf{d} \in \mathcal{D}: d_{i} < 0 \\
+  \le & \text{if } \forall \mathbf{d} \in \mathcal{D}: d_{i} \le 0 \\
+  \neq & \text{if } \forall \mathbf{d} \in \mathcal{D}: d_{i} \neq 0 \\
+  * & \text{otherwise}
+\end{dcases}
+=
+\begin{dcases}
+  \ge & \text{if } \forall \mathbf{I}_{u}^{*}, \mathbf{I}_{v}^{*}:
+  \mathbf{I_{v}}^{*}_{i} \ge \mathbf{I_{u}}^{*}_{i} \\
+  > & \text{if } \forall \mathbf{I}_{u}^{*}, \mathbf{I}_{v}^{*}:
+  \mathbf{I_{v}}^{*}_{i} > \mathbf{I_{u}}^{*}_{i} \\
+  = & \text{if } \forall \mathbf{I}_{u}^{*}, \mathbf{I}_{v}^{*}:
+  \mathbf{I_{v}}^{*}_{i} = \mathbf{I_{u}}^{*}_{i} \\
+  < & \text{if } \forall \mathbf{I}_{u}^{*}, \mathbf{I}_{v}^{*}:
+  \mathbf{I_{v}}^{*}_{i} < \mathbf{I_{u}}^{*}_{i} \\
+  \le & \text{if } \forall \mathbf{I}_{u}^{*}, \mathbf{I}_{v}^{*}:
+  \mathbf{I_{v}}^{*}_{i} \le \mathbf{I_{u}}^{*}_{i} \\
+  \neq & \text{if } \forall \mathbf{I}_{u}^{*}, \mathbf{I}_{v}^{*}:
+  \mathbf{I_{v}}^{*}_{i} \neq \mathbf{I_{u}}^{*}_{i} \\
+  * & \text{otherwise}
+\end{dcases}
+\end{equation}
+So we can have $\mathbf{D}_{u \rightarrow v} = \langle \ge \rangle$.
+
+\subsection{Carrier Loop}
+The \textbf{\textit{carrier loop} of this dependency instance} is the loop
+corresponds to the \textbf{first non-zero component} of the distance vector
+$\mathbf{d}$.
+
+For example, assume the loop nest has induction variables
+$\langle i,j,k\rangle$ at levels $\langle 1,2,3\rangle$.
+If $u@\mathbf{I_{u}}_{p} = v@\mathbf{I_{v}}_{q}$, and
+\[
+\mathbf{I_{v}}_{q} - \mathbf{I_{u}}_{p} = <0,
+\underbrace{-1}_{\text{first }\ne 0}, 1>
+\]
+then loop $\lambda_2$ (whose induction variable is $j$)
+is the carrier loop of this specific instace of the dependency $u \rightarrow v$.
+There is nothing preventing us to construct the dependency where
+$\mathcal{D}_{u \rightarrow v} = \{(0,1,0),(1,0,0)\}$ where both loops
+(i.e. $\lambda_1$ and $\lambda_2$) are the carrier loops for some instances
+of $u \rightarrow v$.
+
+The \textbf{threashold} for a carried dependence is the value of the first non-zero entry
+of that distance vector. The \textbf{minimum threshold} is the \textbf{minimum
+possitive} threashold.
+
+If for a dependency, the threashold is constant throughout execution, this
+dependency has \textbf{constant threashold}, and such dependency is a
+\textbf{constant dependency}. In
+\cref{lst:ck94-nonunique-distance}, the threshold is not constant; however,
+for references $A[i]$ and $A[i+c]$, the threshold is constant (equals to $c$).
+In \cite{carrKennedy1994}, only constant dependencies are considered.
+
+
+% We need to distinguish between thhe oridnaly \textbf{computation/dataflow
+% dependency} and \textbf{memory dependency between array references}, since in
+% the conrext of data cache optimisation, we care only about cache hit, which has
+% the same or adjacent memeory location.
+
+% \begin{lstlisting}[language=C,caption={Memory references in a loop nest.},
+%   label={lst:mem-dep-ex-1}]
+%   for (int i = 1; i < N; i++) {
+%     for (int j = 0; j < N; j++) {
+%         A[i][j] /* ref W_A */ = 1 + B[i-1][j]; /* ref R_B  */
+%         C[i][j] /* ref W_C */ = 2 * A[i][j]  ; /* ref R_A1 */
+%         D[i][j] /* ref W_D */ =     A[i][j-1]; /* ref R_A2 */
+%     }
+%   }
+% \end{lstlisting}
+%
+% In \Cref{lst:mem-dep-ex-1}, although we have the following dataflow dependencies,
+% they do not reference the same memory location.
+% \[
+% R_{B} \xrightarrow[\text{add}]{\text{dataflow}} W_A \quad
+% R_{A_{1}} \xrightarrow[\text{multiply}]{\text{dataflow}} W_{C} \quad
+% R_{A_{2}} \xrightarrow[\text{assign}]{\text{dataflow}} W_{D}
+% \]
+%
+% It is important to note that $R_{B} \xrightarrow{\text{dataflow}}
+% W_A$ means "at iteration $(i,j)$, memory location $R_B@(i-1,j)$ is read". It
+% \textbf{does not} mean that "iteration $(i,j)$ read the value produced by
+% iteration", since $B$ is never produced within this loop net.
+%
+% On the contrary, in the same iteration, we have the following memory
+% dependencies to the same memory location.
+% \[
+% \begin{aligned}
+% &W_A \xrightarrow{\mathbf{d}(0,0)}R_{A_{1}} \\
+% &W_A \xrightarrow{\mathbf{d}(0,1)}R_{A_{2}} \\
+% &R_{A_{1}} \xrightarrow{\mathbf{d}(0,1)}R_{A_{2}}
+% \end{aligned}
+% \]
+
+% the \textbf{same memory address}.
+% \begin{lstlisting}[language=C]
+% for (int i = 1; i < M; i++) {
+%   for (int j = 1; i < N - 2; j++) { /* assume boundaries are handled correctly */
+%     a[i][j]     /* W1 */ = A[i-1][j+1]; /* A1 */
+%     A[i-1][j+2] /* W2 */ = A[i][j-1]  ; /* A2 */
+%   }
+% }
+% \end{lstlisting}
+%
+% For example, in \todo{listing}, we solve for
+% iterations $(i, j)$ that accesses the same location $A[p][q]$.
+% \begin{table}[htbp]
+% \centering
+% \begin{tabular}{lcc}
+% \hline
+% \textbf{Reference} & \textbf{Address equation} & \textbf{Execution accessing $A[p][q]$} \\
+% \hline
+% \texttt{W1} & $(i, j) = (p, q)$ & $(p, q)$ \\
+% \texttt{R1} & $(i - 1, j + 1) = (p, q)$ & $(p + 1, q - 1)$ \\
+% \texttt{W2} & $(i - 1, j + 2) = (p, q)$ & $(p + 1, q - 2)$ \\
+% \texttt{R2} & $(i, j - 1) = (p, q)$ & $(p, q + 1)$ \\
+% \hline
+% \end{tabular}
+% \caption{Reference addresses and corresponding execution access equations.}
+% \label{tab:reference_equations}
+% \end{table}
+%
+% In \Cref{tab:reference_equations}
+%
+% The distance vector is defined as the difference between the read index (sink) and
+% the write index (source).
+% \[
+% \begin{aligned}
+% &\mathbf{i_{\text{sink}}} = \mathbf{i_{\text{source}}} + \mathbf{d} \\
+% &\mathbf{i_{\text{read}}} = \mathbf{i_{\text{write}}} + \mathbf{d}
+% \end{aligned}
+% \]
+%
+% For references $R_{A_{2}}$ and $W_{A}$
+%
+% % Note that in iteration $(\hat{i}, \hat{j}-1)$, we write to location
+% % $A[\hat{i}][\hat{j}-1]$ by reference $W_A \coloneqq A[i][j]$, and in
+% % iteration $(\hat{i}, \hat{j})$, we read from \textbf{the same memory location}
+% % $A[\hat{i}][\hat{j}-1]$ by refenrence
+% % $R_{A_{2}} \coloneqq A[i][j-1]$. Hence we have the dependece.
+% % $W_A \rightarrow R_{A_{2}}$
+%
+%
+%
+%
+% \todo{Review this}
+% We still keep the read-after-read dependence $R_{A_{1}}
+% \xrightarrow{\mathbf{d}(0,1)}R_{A_{2}}$, treating $R_{A_{1}}$ as the source and
+% $R_{A_{2}}$ as the sink. \todo{Why do Carr and Kennedy keep this?}
+%
+% Note that the distance victor for $W_A \xrightarrow{\mathbf{d}(0,0)}R_{A_{1}}$
+% is $\mathbf{0}$, and we call this dependence \textbf{loop-independent}
+% dependency, while the previous two are called loop-dependent dependencies.
+%
+% For loop-ependent dependencies, the \textbf{carrier loop} is the
+% \textbf{first non-zero component} of its distancevector $\mathbf{d}$. \todo{add
+% intuition and examples}
+
+\section{Dependence Analysis}
+\label{sec:ck94-dependence-analysis}
+\Cref{lst:ck94-unroll-original,lst:ck94-unroll-expanded,lst:ck94-unroll-jammed}
+illustrate unroll-and-jam (\cref{sec:ck94-unroll-and-jam}): expand an outer
+loop, then fuse the resulting inner loops. We use this example to introduce
+dependence analysis.
+\begin{figure}[H]
+  \centering
+  \begin{minipage}[t]{0.30\textwidth}
+\begin{lstlisting}[language=C, basicstyle=\ttfamily\scriptsize,
+  caption={Original},
+  label={lst:ck94-unroll-original}]
+for (int i = 0; i < N; i++) {
+  for (int j = 0; j < N; j++) {
+    A[i][j] /* W0 */ = A[i-2][j] /* R0 */;
+  }
+}
+\end{lstlisting}
+  \end{minipage}%
+  \hfill
+  \begin{minipage}[t]{0.35\textwidth}
+\begin{lstlisting}[language=C, basicstyle=\ttfamily\scriptsize,
+  caption={Unrolled},
+  label={lst:ck94-unroll-expanded}]
+for (int i = 0; i < N; i += 3) { /* k=3 */
+  for (int j = 0; j < N; j++) {
+    A[i  ][j] /* W1 */ = A[i-2][j] /* R1 */;
+  }
+  for (int j = 0; j < N; j++) {
+    A[i+1][j] /* W2 */ = A[i-1][j] /* R2 */;
+  }
+  for (int j = 0; j < N; j++) {
+    A[i+2][j] /* W3 */ = A[i  ][j] /* R3 */;
+  }
+}
+\end{lstlisting}
+  \end{minipage}%
+  \hfill
+  \begin{minipage}[t]{0.31\textwidth}
+\begin{lstlisting}[language=C, basicstyle=\ttfamily\scriptsize,
+  caption={Unroll-and-Jam ($k = 3$)},
+  label={lst:ck94-unroll-jammed}]
+for (int i = 0; i < N; i += 3) { /* k=3 */
+  for (int j = 0; j < N; j++) {
+    A[i  ][j] /* W1 */ = A[i-2][j] /* R1 */;
+    A[i+1][j] /* W2 */ = A[i-1][j] /* R2 */;
+    A[i+2][j] /* W3 */ = A[i  ][j] /* R3 */;
+  }
+}
+\end{lstlisting}
+  \end{minipage}
+\end{figure}
+
+\subsection{General Case}
+\Cref{lst:ck94-unroll-jammed} shows the transformation applied to
+\cref{lst:ck94-unroll-original}. The iteration indices of the outer
+loop $\lambda_1$ (induction variable $i$) and inner loop $\lambda_2$
+(induction variable $j$) can be expressed as
+% Coordinates and calculations for this worked example stay unnumbered.
+\[
+\begin{aligned}
+&I_{1} = 3x &\quad \forall 0 \le x < \left\lceil \frac{N}{3} \right\rceil \\
+&I_{2} = y &\quad \forall 0 \le y < N
+\end{aligned}
+\]
+We collect the read set $R=\{R_{1},R_{2},R_{3}\}$ and write set
+$W=\{W_{1},W_{2},W_{3}\}$. Boundary iterations require a remainder loop
+or guards if $N$ is not divisible by three.
+
+To analyse the read-write dependency, for $\langle R_{i}, W_{j} \rangle$ pair,
+we solve the equation where they point to the same memory address. For example,
+for $\langle R_{1}, W_{2} \rangle$, we solve for equations
+\[
+\begin{dcases}
+  3 x_{R_{1}} - 2 &= 3 x_{W_{2}} + 1 \\
+  y_{R_{1}} &= y_{W_{2}}
+\end{dcases}
+\implies
+\begin{dcases}
+  x_{R_{1}} - x_{W_{2}} &= 1 \\
+  y_{R_{1}} - y_{W_{2}} &= 0
+\end{dcases}
+\implies
+\mathbf{d}_{W_{2} \rightarrow R_{1}} = \langle 1, 0 \rangle.
+\]
+Thus $W_{2}$ writes the location read by $R_{1}$ in a later outer
+iteration (provided both iterations are in range).
+
+However, when we try to solve the dependency $\langle W_{1}, R_{2} \rangle$, we
+have
+\[
+\begin{dcases}
+  3 x_{W_{1}} &= 3 x_{R_{2}} - 1 \\
+  y_{W_{1}} &= y_{R_{2}}
+\end{dcases}
+\implies
+\begin{dcases}
+  x_{W_{1}} - x_{R_{2}} &= \frac{1}{3} \\
+  y_{W_{1}} - y_{R_{2}} &= 0
+\end{dcases}
+\implies
+\mathbf{d}_{W_{1} \rightarrow R_{2}} = \left\langle \frac{1}{3}, 0 \right\rangle
+\]
+Which means we cannot find a valid (integral) iteration distance in which
+references $W_{1}$ and $R_{2}$ access the same memory address. So there's no
+dependency between $W_{1}$ and $R_{2}$.
+
+Here, we defined the dependecy vector $\mathbf{d}_{W_{1} \rightarrow R_{2}} \in
+\mathbb{Z}$. however, if we defined it as the distance between actual
+iterations, it would be in $3\mathbb{Z}$ because the outer loop advances by three.
+Either coordinate system is valid if used consistently; the fractional
+solution above is not a valid pair of iterations.
+
+\subsection{Unroll-and-Jam: Single Induction Variable Subscript References}
+\label{sec:ck94-siv-dependences}
+
+In this section, we discuss special dependencies \textbf{generated by
+unroll-and-jam} from references with SIV subscripts.
+
+If the $i$-th loop in a loop nest $\Lambda$ is \textbf{unrolled into $X_i$ copies}, the updated dependence graph
+$G' = (V', E')$ can be computed from the original graph $G = (V,E)$.
+
+Each vertex has $X_i$ copies, indexed from $0$ to $X_i-1$.
+\[
+\forall v \in V: \left\{v_{0}, \dots, v_{X_i-1}\right\} \subset V'.
+\]
+
+The dependencies (edges) are handled differently depending on whether
+\textbf{the sink is loop variant or not}.
+
+\subsubsection{Variant References}
+For an edge $e$, we denote its distance vector as $\mathbf{d}(e)$, so its $i$-th
+component (corresponding to the $i$-th loop) is $\mathbf{d}_{i}(e)$. Then
+\[
+  \forall e = \left\langle v, w \right\rangle \in E: \exists \left\{e_{0}, \dots,
+  e_{X_i-1}\right\} \subset E^{\prime}
+\]
+where
+\[
+e_{m} = \left\langle v_{m}, w_{f(m;e,X_{i})} \right\rangle
+\]
+\begin{equation}
+  f(m;e,X_{i}) = \left(m + \mathbf{d}_{i}(e)\right) \bmod X_{i}
+\end{equation}
+where $X_{i}$ is the number of loop bodies of loop $\lambda_{i}$ after
+unrolling.
+
+This means, that for every reference source $v_{i}$, there is always a
+dependence edge to a sink at $w_{f(i)}$, and its distance vector
+$\mathbf{d}(e_{i})$ is computed as
+
+\begin{equation}
+  \label{eq:ck94-unrolled-distance}
+  \mathbf{d}_{i}(e_{m}) =
+  \begin{dcases}
+    \left\lfloor \frac{\mathbf{d}_{i}(e)}{X_{i}}\right\rfloor + 1
+    &\text{ if } f(m; e, X_{i}) < m \\
+    \left\lfloor \frac{\mathbf{d}_{i}(e)}{X_{i}}\right\rfloor
+    &\text{ if } f(m; e, X_{i}) \ge m
+  \end{dcases}
+\end{equation}
+
+This is a modulo $X_{i}$ system. A reference the $k$-th iteration of the
+orignal loop will be mapped to the $(k \bmod X_{i})$-th copy in the
+$\left\lfloor \frac{k}{X_{i}} \right\rfloor$-th iteration of the new loop.
+
+\todo{why +1?}
+
+\Cref{eq:ck94-unrolled-distance} shows that for the new dependency edge
+$e_{m}=\left\langle v_{m}, w_{f(m)} \right\rangle$
+to be loop-invariant regarding to $\lambda_{i}$, the original distace of
+dependency edge $e = \left\langle v, w \right\rangle$ should be less than the
+repetition after expansion. Otherwise, $\mathbf{d}_{i}(e) \ge X_{i}$
+for a source $v_{m}$, its matching sink
+$w_{f(m)}$ occours in later iterations instead of the same iteration.
+
+\begin{equation}
+    \mathbf{d}_{i}(e_{m}) = 0
+    % \xLeftrightarrow{\text{only in case 2}} \;
+    \iff
+    \left(f(m; e, X_{i}) \ge m\right) \land \left(\left\lfloor
+    \frac{\mathbf{d}_{i}(e)}{X_{i}} \right\rfloor = 0 \right)
+  \label{eq:ck94-zero-distance-criterion}
+\end{equation}
+
+\begin{equation}
+  \left\lfloor  \frac{\mathbf{d}_{i}(e)}{X_{i}} \right\rfloor = 0
+  \iff 0 \le \frac{\mathbf{d}_{i}(e)}{X_{i}} < 1
+  \xLeftrightarrow{X_{i} > 0} \;
+  0\le \mathbf{d}_{i}(e) < X_{i}
+  \label{eq:ck94-distance-below-factor}
+\end{equation}
+
+From \cref{eq:ck94-zero-distance-criterion,eq:ck94-distance-below-factor}, if
+given $0 \le \mathbf{d}_{i}(e) < X_{i}$, we have
+\begin{equation}
+  \mathbf{d}_{i}(e_{m}) = 0 \iff f(m; e, X_{i}) \ge m
+    \label{eq:ck94-zero-distance-no-wrap}
+\end{equation}
+
+Given $0 \le \mathbf{d}_{i}(e) < X_{i}$, we can prove that
+\footnote{\todo{prove later}}
+\begin{equation}
+  f(m; e, X_{i}) \ge m \iff m < X_{i} - d_{i}(e)
+  \label{eq:ck94-no-wrap-bound}
+\end{equation}
+
+With \cref{eq:ck94-no-wrap-bound,eq:ck94-zero-distance-no-wrap},
+we have that: Given $0 \le d_{i}(e) < X_{i}$,
+\begin{equation}
+  \mathbf{d}_{i}(e_{m}) = 0 \iff m < X_{i} - \mathbf{d}_{i}(e)
+  \label{eq:ck94-zero-distance-copy-bound}
+\end{equation}
+
+\Cref{eq:ck94-zero-distance-copy-bound} says that, for an original edge $e$, its
+distance w.r.t. loop $\lambda_{i}$ is less than the loop's unroll factor, then
+as long as $m$-th edge copy in the unroll-and-jam'ed loop has $m < X_{i} -
+\mathbf{d}_{i}(e)$, its corresponding distance component is 0. This will be
+useful when we are estimating how many references can be eliminated using scalar
+replacement.
+
+
+% Without loss of generality, we assume the following loop nest
+% \begin{lstlisting}[label={lst:example},
+% language=C,caption={Code example.}]
+% for (int i = 0; i < M; i += k) { /* const int k */
+%   for (int j = 0; j < N; j++) {
+%     /* ----- Original body ------ */
+%     /* loop body 0   */
+%     /* --- Expanded bodies, k --- */
+%     /* loop body 1   */
+%     /* loop body ... */
+%     /* loop body k   */
+%   }
+% }
+%
+% \end{lstlisting}
+%
+% \todo{say something about the old vs new $i$ index}
+% \begin{equation}
+%   \begin{aligned}
+%     \mathbf{I} &= \left\langle x, y \right\rangle \quad
+%     \left(0 \le x < M\right) \\
+%     \mathbf{I}^{\prime} &= \left\langle kx^{\prime}, y^{\prime} \right\rangle
+%     \quad \left(0 \le x^{\prime} < \left\lfloor \frac{M}{k} \right\rfloor \right)
+%   \end{aligned}
+% \end{equation}
+%
+% In a new iteration $\mathbf{I}^{\prime}$, the $m$-th copy of reference $v$
+% ($v_{m})$ comes form the original iteration
+% \[
+%   (k+1)x + m
+% \]
+
+\subsubsection{Invariant References}
+When applying unroll-and-jam, invariant references behave differently. Note that
+here when we say a reference is \textit{variant}, it means variant w.r.t every loop,
+otherwise it is considered invariant.
+
+For an invariant reference w.r.t. the $\lambda_{k}$ loop, by definition, varying its
+iteration coordinate $I_k$ of loop $\lambda_k$ does not change the memory location. Thus
+the $k$-th component of its direction vector $\mathcal{D}_{k} =$ '$\neq$'.
+
+After unrolling, we would have multiple instances of this $\lambda_k$-invariant reference, and
+hence the diatance vector between the these references may result in $D_{l}=$ '='.
+
+\textit{This would be problematic when it's in the carrying loop's position.}
+\begin{figure}[H]
+  \centering
+  \begin{minipage}[t]{0.48\textwidth}
+\begin{lstlisting}[language=C,
+  caption={Original},
+  label={lst:ck94-invariant-original}]
+for (int i = 0; i < N; i++) {
+  for (int j = 0; j < N; j++) {
+    for (int k = 0; k < N; k++) {
+      /* ... */ = A[i][k] /* R0 */
+    }
+  }
+}
+\end{lstlisting}
+  \end{minipage}%
+  \hfill
+  \begin{minipage}[t]{0.48\textwidth}
+\begin{lstlisting}[language=C,
+  caption={Unrolled},
+  label={lst:ck94-invariant-unrolled}]
+for (int i = 0; i < N; i++) {
+  for (int j = 0; j < N; j+=2) { /* <-- Unrolled by k = 2 */
+    for (int k = 0; k < N; k++) {
+      /* ... */ = A[i][k] /* R1 */;
+      /* ... */ = A[i][k] /* R2 */;
+    }
+  }
+}
+\end{lstlisting}
+  \end{minipage}
+  \caption{Invariant Consistent Reference Example}
+  \label{fig:ck94-invariant-unroll}
+\end{figure}
+
+For example, reference $R_{0}$ in \cref{lst:ck94-invariant-original} is invariant
+w.r.t. $\lambda_2$ (induction variable $j$). When analysing dependencies,
+we can solve the equation
+\[
+  \begin{dcases}
+    I_1 = I'_1 \\
+    I_3 = I'_3
+  \end{dcases}
+  \implies
+  \begin{dcases}
+    d_1 = I'_1 - I_1 = 0 \\
+    d_3 = I'_3 - I_3 = 0
+  \end{dcases}
+  \implies
+  \mathbf{d} = \left\langle 0, I'_2 - I_2, 0
+  \right\rangle
+\]
+By imposing lexigraphical (normalised sequential loop) order of the outerloop,
+we have $I'_2 > I_2$ for a forward dependence (we do \textit{not}
+allow $I'_2 = I_2$ because we need \textit{distinct} accesses).
+so its corresponding direction vector
+\[
+  \mathbf{D}_{R_{0}\rightarrow R_{0}} = \left\langle =, >, = \right\rangle
+\]
+
+It becomes problematic when, after replication, the \textbf{outermost non-zero} direction vector entry
+(assume $l$) becomes zero.\[
+  \begin{aligned}
+  &\exists \mathbf{d}\in \mathcal{D}_{R_{0}\rightarrow R_{0}}&&: \mathbf{d}_{l}
+  \neq 0 \\
+  \land \quad
+  &\exists \mathbf{d}, \mathbf{d}^{\prime} \in \mathcal{D}_{R_{1}\rightarrow
+  R_{2}}&&:
+  \mathbf{d}_{l} = 0 \land \mathbf{d}^{\prime}_{l} \neq 0
+  \end{aligned}
+\]
+
+This would \textbf{change the carrying loop} when $\mathbf{d}_{l} = 0$.
+
+Since we want to reuse \cref{eq:ck94-unrolled-distance}, however, in the
+variant case, we have $\left| \mathcal{D}_{\text{invar}} \right| = 1$, so it is obvious to
+
+\todo{Complete this}
+
+\subsection{Unroll-and-Jam: Multiple Induction Variable Subscript References}
+% In \cite{carrPhd}, references with multiple induction variable (MIV) subscript is discussed.
+% \todo{Add here?}
+
+\cite{carrPhd} supports a subset of MIV subscript. \todo{perhaps explain?}
+
+\section{Unroll-and-Jam}
+\label{sec:ck94-unroll-and-jam}
+This method unrolls the inner loop and jams the resulting inner loops back
+together. In \cite{carrKennedy1994}, unroll-and-jam is only to create more reuses.
+
+In this report, we assume loops are unrolled in an innermost to outermost order
+\cite{carrKennedy1994}. We can recursively unroll at an arbitrary
+position by unrolling all its nesting loops. This order makes sense since we are
+optimising to cache hit.
+
+
+\textit{To generalise the unrolling factor $k$, we use \textbf{$X_{i}$} to express the unroll
+factor at the $i$-th outer loop. In simple examples where we only unroll one
+loop, $k$ is used.}
+
+\subsection{Safety}
+Unroll-and-Jam is safe if the flow of value is not changed, i.e. it protects the
+original ordering of dynamic operations
+The safety theorem from \todo{cite callahan et al. 1998} states that unrolling
+loop $k$ more than ...
+
+Let edge $e$ be a true (RAW), output (WAW) or antidependence (WAR)
+\textit{carried at level $k$} with dependence vector
+\[
+  \mathbf{d} = \left\langle 0, \dots, d_{k}, 0, \dots, 0, d_{j}, \dots
+  \right\rangle
+\]
+where $d_{j} < 0$ and $\forall k < i < j: (d_{i} = 0)$, then the loop at level k
+($\lambda_{k}$) can be unrolled \textbf{at most} $d_{k}-1$ times before a
+dependence is generated that prevents fusion of the inner $n-k$ loops. Also,
+\begin{itemize}[nosep]
+  \item \textbf{Loop fusion} can be introduced before unroll-and-jam safty is
+    checked to remove negative entires in preventing dependencies \todo{Wolfe
+    1986};
+  \item \textbf{Loop distribution} must be safe when non-do statements appear at
+    levels non-innermost levels or when multiple loops appear at inner levels.
+\end{itemize}
+
+
+
+\section{Objective Function}
+% The derivation assumes
+% \footnote{For clarity of presentation, not the limitation of the algorithm
+% \cite{carrKennedy1994}}:
+% \begin{enumerate}[nosep]
+%   \item Perfectly-nested loop nets \todo{section 3.2.4.5 \cite{carrKennedy1994}}
+%   \item Loops with conditional control in the innermost loop body is discarded as
+%     a unroll-and-jam candidate
+%     \footnote{Inserting controlflow have disastrous effects upon performance
+%     \cite{carrKennedy1994}}
+%   \item Scalar replacement removes no stores
+%   \item At most one incoming or outgoing edge incident upon each $v \in V$
+%     \cite{carrKennedy1994}, whenever this is assumed, the function $e: V \mapsto
+%     E$ is used, so the only-edge of reference $v$ is calculated as $e(v)$. For
+%     simplicity, $e_{m}(v)$ is used to denote the $m$-th copy of the original
+%     edge $e(v)$, also, $e_{0}(v) \coloneqq e(v)$.
+% \end{enumerate}
+
+\textbf{Machine Balance} is a compile-time constant defined by the target
+architecture.
+\begin{equation}
+  \label{eq:ck94-machine-balance}
+\beta_{M} = \frac{M_{M}}{F_{M}}
+\end{equation}
+Where $M_{M}$ is the rate of fetching data from memeory
+% These units explain a model parameter; the model itself is numbered.
+\[
+M_{M} = \frac{\text{max words}}{\text{cycle}}
+\]
+and $F_{M}$ is the aate of floating-point operations can be performed
+\[
+F_{M} = \frac{\text{max flops}}{\text{cycle}}
+\]
+\textbf{Loop Balance} is determined at compile time for a specific loop
+\begin{equation}
+  \label{eq:ck94-loop-balance}
+\beta_{L} = \frac{M}{F}
+\end{equation}
+where $M$ is the number of memory references and $F$ is the number of
+floating-point operations.
+
+\paragraph{Optimisation Objective}
+The objective of this optimisation is to find two outer loops $\lambda_{j},
+\lambda_{k}$ to unroll
+\footnote{Unroll-and-jam can be limited to one or two loops in a given loop nest
+\cite{carrKennedy1994}. Most loops are not very deep.}, and find their
+corresponding unroll factors that
+minimises loop balance while respecting the available register count.
+
+\textbf{Objective function.} Minimise memory operations per floating-point
+operation, subject to the register constraint:
+% \begin{equation}
+%   \min_{X_i,X_j}\;\beta_L(X_i,X_j)
+%   = \min_{X_i,X_j}\;\frac{M(X_i,X_j)}{F(X_i,X_j)}.
+% \end{equation}
+\begin{equation}
+  \min_{X_i}\;\beta_L(X_i)
+  = \min_{X_i}\;\frac{M(X_i)}{F(X_i)}.
+\end{equation}
+
+\textbf{Register constraint.}
+\begin{equation}
+  % R(X_{i}, X_{j}) \le R_{\text{arch}}
+  R(X_{i}) \le R_{\text{arch}}
+  % \label{eq:}
+\end{equation}
+
+Unroll-and-jam together with scalar replacement can reduce memory access.
+However, using scalar replacement will introduce intermediate registers, hence
+the constraint must be met.
+
+% \subsection{Simplification and Generalised Cases}
+% \subsection{Multiple Edge References}
+% We first consider a spetial case where every reference has only one incident
+% (be it incoming or outgoing) edge \todo{exclusive or?},
+% and we denote that edge related to that
+% referece $v$ as $e(v)$, with $e: V \mapsto E$.
+%
+% In the formation of our loop balance objective function, distance vector is used.
+% In the simplified case, we can associate exactly one distance vector to
+% this reference
+% \[
+%   \mathbf{d}(v) \coloneqq \mathbf{d}(e(v))
+% \]
+% In general, references have different edges, but the idea is to find a
+% \textbf{representative} distance vector for this reference so we can treat this
+% reference
+%
+% \subsection{Imperfectly-nested Loop Nets}
+% \todo{}
+
+\section{Floating-point Operations}
+The number of floating-point operations $F$ is calculated as
+\begin{equation}
+  \label{eq:ck94-flop-count}
+  F(X_{i}) = f \cdot \prod_{1 \le i < N} X_{i}
+\end{equation}
+Where $f$ is the number of floating-point operations in the original loop,
+$X_{i}$ is the number of loop bodies after unroll-and-jam (expansion factor
+$+1$). This formula assumes that floating-point common subexpressions are not
+removed from the inner loop \cite{carrKennedy1994}. \todo{Explain possible
+situations where such common subexpressions are removed}
+
+
+\section{Memory References}
+\todo{Make reference partition a seperate section since it will be used in
+register pressure modelling as well}
+When calculating the number of memory references, \textbf{infinite register set}
+is assumed \cite{carrKennedy1994}.
+
+A specific reference set $V \subset \mathbb{M}$ can be partitioned into the
+following subsets
+\begin{itemize}
+  \item $V^{\varnothing}$: \textit{references} without incoming consistent dependence;
+  \item $\{V^{C}_r$, $V^{C}_w\}$\footnotemark[\value{footnote}]: 
+    \textit{memory reads and writes} with  incoming 
+    (loop-carried or loop-independent) consistent dependence 
+    but is \textbf{variant w.r.t. some loop} (not invariant w.r.t. any loop);
+  \item $\{V^{I}_{r}$, $V^{I}_w\}$\footnotemark[\value{footnote}]: 
+    \textit{memory reads and writes} \textbf{invariant w.r.t some loop}.
+\end{itemize}
+\footnotetext{\cite{carrKennedy1994} only mentioend the sets $\{V^{\varnothing},
+V^{C}_r, V^{I}_r\}$. \cite{carrPhd} added $\{V^{C}_w, V^{I}_w\}$}
+
+\subsection{Non-dependent References}
+For references without incoming consistent dependencies, unrolling always
+introduces memeory access, hence the total memory accesses after unrolling is
+\begin{equation}
+  M^{\varnothing}(\mathbf{X}) = \sum_{v \in V^{\varnothing}}
+  \left(\prod_{1 \le i < N} X_{i} \right)
+\end{equation}
+
+For a specific loop $\lambda_{i}$, unrolling it have memory accesses
+\begin{equation}
+  \begin{aligned}
+    M^{\varnothing}(X_{i}; \lambda_{i}) &= \sum_{v \in V^{\varnothing}} X_{i} \\
+    &= \left| V^{\varnothing} \right| X_{i} \\
+    &= a_{0} X_{i}
+  \end{aligned}
+\end{equation}
+
+\subsection{Variant References}
+$V^{C}_{r}$ is of particular interest of \textbf{scalar replacement},
+since it can reduce the number of memory accesses of references,
+orignally having cross-iteration  dependeicies,
+that happen to be in the same iteration after unroll-and-jam.
+
+\subsubsection{Special Case: Single-edge References}
+For scalar replacement to remove memory access for variant references, it must
+be of form $\mathbf{d} = \left\langle 0, 0, 0, \dots, \mathbf{d}_{N} \right\rangle$. i.e. the
+dependency edge must be carried by the innermost loop or loop-independent.
+
+From \cref{eq:ck94-zero-distance-copy-bound}, since now we have the one-to-one
+correspondance between reference $v$ and its only \textit{incoming} edge $e(v)$,
+we can find all copies with $\mathbf{d}_{i}(e(v)) = 0$.
+\[
+  \mathcal{C}(v; X_{i}) \coloneqq
+  \left\{ v_{m}: m < X_{i} - \mathbf{d}_{i}(e(v)) \right\}
+\]
+
+Essentially, the \textbf{number of edges} that are \textit{amenable to scalar replacement
+is}
+\begin{equation}
+  \begin{aligned}
+    \left| \mathcal{C}(v; X_{i}) \right|
+    &= m \\
+    &= \max \left(X_{i} - \mathbf{d}_{i}(e(v)), \; 0 \right) \\
+    &\xlongequal{x^{+} \coloneqq \max(x, 0)}
+    \left(X_{i} - \mathbf{d}_{i}(e(v))\right)^{+}
+  \end{aligned}
+  \label{eq:ck94-removable-copies}
+\end{equation}
+
+
+
+According to \cref{eq:ck94-removable-copies}, the total number of
+memory references \textbf{removed by scalar replacement} is calculated as
+% \todo{are we assuming single edge $e(v)$ to vertex $v$? Yes we do
+% \cite{carrKennedy1994}}
+\begin{equation}
+  \sum_{v \in V^{C}_{r}} \left(\prod_{1 \le i < N}
+    \left(X_{i} - \mathbf{d}_{i}(e(v))\right)^{+}\right)
+  \label{eq:ck94-removed-variant-references}
+\end{equation}
+
+Note that \cref{eq:ck94-removed-variant-references} implies that,
+for an edge \(e\), if \textit{any} outer loop $\lambda_{i}$ satisfies \(d_i(e)\ge X_i\),
+then no copies of the sink reference can have their memory accesses eliminated
+through \(e\) by the modeled scalar replacement under the chosen unroll factors.
+
+\[
+  \exists \lambda_{i}: X_i\le d_i(e)
+\implies (X_i-d_i(e))^+=0
+\implies \prod_{1 \le j < N}(X_j-d_j(e))^+=0.
+\]
+
+\textit{Since we need the two references to be \textbf{reachable in any dimensions}, as
+long as in one dimension, it is not reachable, the two references are irrechable
+through the distance vector $\mathbf{d}(e)$.}
+
+The total number of memory references \textbf{before scalar replacement} is
+calculated as
+\begin{equation}
+  \sum_{v \in V^{C}_{r}} \left(\prod_{1 \le i < N} X_{i}\right)
+  \label{eq:ck94-variant-references-before-replacement}
+\end{equation}
+
+With  total number of memory references \textbf{after scalar replacement} is
+calculated as
+\begin{equation}
+  M^{C}_{r}(\mathbf{X}) =
+  \sum_{v \in V^{C}_{r}} \left(
+  \prod_{1 \le i < N} X_{i} \; - \;
+  \prod_{1 \le i < N} \left( X_{i} - \mathbf{d}_{i}(e(v))\right)^{+}
+  \right)
+  % \label{eq:}
+\end{equation}
+
+For a specific loop $\lambda_{i}$, the formula can be reduced to
+\begin{equation}
+  \begin{aligned}
+    M^{C}_{r}(X_{i}; \lambda_{i}) &=
+    \sum_{v \in V^{c}_{r}} \left(
+    X_{i} \; - \; \left( X_{i} - \mathbf{d}_{i}(e(v))\right)^{+}
+    \right) \\
+    &= \sum_{v \in V^{c}_{r}} \left(
+    X_{i} -
+    \begin{cases}
+      X_{i} - \mathbf{d}_{i}(e(v)) &\text{ if } X_{i} \ge \mathbf{d}_{i}(e(v)) \\
+      0 &\text{ if } X_{i} < \mathbf{d}_{i}(e(v))
+    \end{cases}
+    \right) \\
+    &= \sum_{v \in V^{c}_{r}} \left(
+    \begin{cases}
+      \mathbf{d}_{i}(e(v)) &\text{ if } X_{i} \ge \mathbf{d}_{i}(e(v)) \\
+      X_{i} &\text{ if } X_{i} < \mathbf{d}_{i}(e(v))
+    \end{cases}
+    \right) \\
+    &= \left|\{v: \mathbf{d}_{i}(e(v)) > X_{i}\}\right| \cdot X_{i} +
+    \left|\{v: \mathbf{d}_{i}(e(v)) \le X_{i}\}\right| \\
+    &= a_{0}(X_{i}) \cdot X_{i} + a_{1}(X_{i})
+  \end{aligned}
+  \label{eq:ck94-single-edge-memory-cost}
+\end{equation}
+
+\subsubsection{General Case: Multi-edge References}
+The idea is to reuse \cref{eq:ck94-single-edge-memory-cost}. The distance vector
+$\mathbf{d}(e(v))$ of only-edge $e(v)$ of reference $v$ is replaces with a
+representative summarised distance $\hat{\mathbf{d}}(v)$.
+\begin{equation}
+  \hat{\mathbf{d}}_{i}(v) \coloneqq \min_{e \in E_{\text{in}(v)}} \mathbf{d}_{i}(e)
+  \label{eq:ck94-multiedge-summary-distance}
+\end{equation}
+
+Note that in \cref{eq:ck94-multiedge-summary-distance}, each component of
+$\hat{\mathbf{d}}(v)$ may come from different edges.
+
+The summarised vector $\hat{\mathbf{d}}(v)$ represents the earliest possible
+point in the unrolling space when a reference may be removed, so we could
+choose the $X_{i}$ that is less than the actual optimum. So this is a
+conservative edtimation.
+
+\subsection{Invariant References}
+Given an invariant reference $v \in V^{I}_{r}$ w.r.t. loop $\lambda_{k}$ ($1 \le
+k < N$), where $N$ is the deepest level of loop nest (hence $\lambda_{N}$
+denotes the innermost loop), we discuss the what we can gain by
+unrolling a loop $\lambda_{k}$.
+
+Recall that when a reference $v$ is invariant w.r.t. loop $\lambda_{i}$, all of
+its array subscript expressions does not contain the induction variable of
+$\lambda_{i}$.
+
+In general, if we unroll $\lambda_{i}$, since $Invar(v, \lambda_{i})$
+(the induction variable of $\lambda_i$ is not present in any array subscript
+expression on $v$), the unrolled copies
+of the same reference will access the same memory address (see
+\cref{fig:ck94-outer-invariant-replacement}).
+In one pass of the innermost loop, there is only one memeory access needed.
+
+\begin{figure}[H]
+  \centering
+  \begin{minipage}[t]{\textwidth}
+\begin{lstlisting}[language=C, caption={Original Loop}]
+for (int i = 0; i < M; i++) {
+  for (int j = 0; j < N; j++) {
+    for (int k = 0; k < N; k++) {
+      x = A[i][k]; /* R0 */
+    }
+  }
+}
+\end{lstlisting}
+  \end{minipage}
+  \par\medskip
+  \begin{minipage}[t]{0.48\textwidth}
+\begin{lstlisting}[language=C, caption={After Unroll-and-Jam}]
+for (int i = 0; i < M; i++) {
+  for (int j = 0; j < N; j += 3) {
+    for (int k = 0; k < N; k++) {
+      x = A[i][k]; /* R0 */
+      y = A[i][k]; /* R1 */
+      z = A[i][k]; /* R2 */
+    }
+  }
+}
+\end{lstlisting}
+  \end{minipage}%
+  \hfill
+  \begin{minipage}[t]{0.48\textwidth}
+\begin{lstlisting}[language=C,
+  caption={Outer-loop invariant read after scalar replacement},
+  label={lst:ck94-outer-invariant-replaced}]
+for (int i = 0; i < M; i++) {
+  for (int j = 0; j < N; j += 3) {
+    for (int k = 0; k < N; k++) {
+      tmp = A[i][k]; /* R0 */
+      x = tmp;
+      y = tmp;
+      z = tmp;
+    }
+  }
+}
+\end{lstlisting}
+  \end{minipage}
+  \caption{Replacing repeated reads after unrolling an outer loop.}
+  \label{fig:ck94-outer-invariant-replacement}
+\end{figure}
+
+If a reference is invariant with respect to the innermost loop, its load
+can be hoisted outside that loop, as in
+\cref{fig:ck94-inner-invariant-replacement}. In one pass of the innermost loop,
+there is no memory read.
+
+\begin{figure}[H]
+  \centering
+  \begin{minipage}[t]{\textwidth}
+\begin{lstlisting}[language=C, caption={Original Loop}]
+for (int i = 0; i < M; i++) {
+  for (int j = 0; j < N; j++) {
+    for (int k = 0; k < N; k++) {
+      x = A[i][j]; /* R0 */
+    }
+  }
+}
+\end{lstlisting}
+  \end{minipage}
+  \par\medskip
+  \begin{minipage}[t]{0.48\textwidth}
+\begin{lstlisting}[language=C, caption={After Unroll-and-Jam}]
+for (int i = 0; i < M; i++) {
+  for (int j = 0; j < N; j += 3) {
+    for (int k = 0; k < N; k++) {
+      x = A[i][j]; /* R0 */
+      y = A[i][j+1]; /* R1 */
+      z = A[i][j+2]; /* R2 */
+    }
+  }
+}
+\end{lstlisting}
+  \end{minipage}%
+  \hfill
+  \begin{minipage}[t]{0.48\textwidth}
+\begin{lstlisting}[language=C,
+  caption={Innermost-loop invariant reads after scalar replacement},
+  label={lst:ck94-inner-invariant-replaced}]
+for (int i = 0; i < M; i++) {
+  for (int j = 0; j < N; j += 3) {
+    tmp0 = A[i][j]; /* R0 */
+    tmp1 = A[i][j+1]; /* R0 */
+    tmp2 = A[i][j+2]; /* R0 */
+    for (int k = 0; k < N; k++) {
+      x = tmp0;
+      y = tmp1;
+      z = tmp2;
+    }
+  }
+}
+\end{lstlisting}
+  \end{minipage}
+  \caption{Hoisting a loop-invariant load outside the innermost loop.}
+  \label{fig:ck94-inner-invariant-replacement}
+\end{figure}
+
+\begin{equation}
+  \omega(v, i) =
+  \begin{cases}
+    0 &\text{if } Invar(v, \lambda_{N}) \\
+    1 &\text{if } Invar(v, \lambda_{i}) \footnotemark \\
+    X_{i} &\text{ otherwise}
+  \end{cases}
+  % \label{eq:}
+\end{equation}
+
+\footnotetext{This is an else-if case where $\neg Invar(v, \lambda_{N})$
+is assumed.}
+
+
+To analyse unrolling a specific loop $\lambda_{i}$
+\begin{equation}
+  \begin{aligned}
+    M^{I}_{r}(X_{i}; \lambda_{i}) &= \sum_{v \in V^{I}_{r}} \omega(v, i)
+    \\
+    &= \left|\{v: \neg Invar(v, \lambda_{N}) \land
+      Invar(v, \lambda_{i})\}\right| \\
+    &\quad + \left|\{v: \neg Invar(v, \lambda_{i}) \land
+      \neg Invar(v, \lambda_{N})\}\right| X_{i} \\
+    &= a_{0} X_{i} + a_{1}
+  \end{aligned}
+\end{equation}
+
+Note that here, $a_{0}$ and $a_{1}$ is dependent on $\lambda_{i}$, but not
+directly on the value of $X_{i}$.
+
+% For each reference, $v$, and the unrol factor of the loop nest, the number of 
+The total number \todo{finish}
+\begin{equation}
+  M^{I}_{r}(\mathbf{X}) = \sum_{v \in V^{I}_{r}} \left(
+    \prod_{1 \le i < N} \omega(v, i)
+\right)
+\end{equation}
+
+% For each reference $v$, its memory access count is calculated as \todo{ref}
+% \begin{equation}
+% \prod_{1 \le i < N} \omega(v, i)
+% \end{equation}
+%
+% Notice that as long as the reference is invariant w.r.t. the innermost loop, we
+% can always find a way to reduce its memory access by hoisting the 
+
+\subsection{Loop Balance Properties}
+When we only consider unrolling loop $\lambda_{i}$, we replace the $\prod_{1 \le i
+< N} X_{i}$ term with just $X_{i}$, so the loop balance $\beta_{L}(X_{i}; \lambda_{i})$
+can be calculated as
+\begin{equation}
+  \begin{aligned}
+    \beta_{L}(X_{i}; \lambda_{i})
+    &= \frac{M^{\varnothing}(X_i;\lambda_{i}) + M^{C}_{r}(X_i;\lambda_{i}) +
+      M^{I}_{r}(X_i;\lambda_{i})}{f \cdot X_{i}} \\
+    &= \frac{
+      a_{0} X_{i} + (a_{1}(X_{i}) \cdot X_{i} + a_{2}(X_{i})) +
+      (a_{3} X_{i} + a_{4})
+    }{f \cdot X_{i}} \\
+    &= \frac{c_{0}(X_{i}) \cdot X_{i} + c_{1}(X_{i})}{f \cdot X_{i}}
+  \end{aligned}
+\end{equation}
+
+Note that $\forall X_{i}: c_{0}(X_{i}), c_{1}(X_{i}) \ge 0$
+
+Also we have the properties
+\begin{itemize}[nosep]
+  \item $\beta_{L}$ is non-increasing in the $i$-th dimension, and
+  \item untilling multiple loop nests in an outermost- to innermost-loop
+    order does not increase $\beta_{i}$
+\end{itemize}
+
+\section{Register Pressure}
+The registers are used to (1) store intermediate subcsript calculation and (2)
+hold values of regerences removed by scalar replacement.
+
+
+\subsection{Non-dependent References}
+For non-dependent references, no scalar replacement is made, so we only need to
+model registers used in subscript expression.
+
+To compute the number of registers used to store intermediate results for
+subscript expression evaluation, the tree-labeling technique
+\cite{sethiUllman1970} is used. However, it does not take into account the
+increase in register pressure due to instruction scheduling
+\cite{carrKennedy1994}.
+
+\subsection{Variant References}
+\Cref{eq:ck94-removed-variant-references} computes the number of
+references removed by scalar replacement after unroll-and-jam.
+
+\subsubsection{Spetial Case: Single-edge References}
+We assuming all register interfere, all values live throughout the (inner?) loop body, and registers are not 
+to be reused.
+
+For each edge $e$, the number of registers
+needed after scalar replacement is
+\begin{equation}
+\mathbf{d}_{N}(e) + 1
+\end{equation}
+where $\mathbf{d}_{N}$ is the component corresponding to the innermost loop
+$\lambda_{N}$.
+
+\todo{Read \cite{sethiUllman1970}}
+
+For example, in \cref{lst:ck94-register-variant-original}, we have
+$\mathbf{d}_{W_0\rightarrow V_0} = \left\langle 1, 2\right\rangle$, when
+unrolling $\lambda_1$ (induction variable $i$) by $X_1 = 2$, we will have $\mathbf{d}_{W_0\rightarrow
+V_1} = \left\langle 0, 2 \right\rangle$, which is \textit{carried by the
+innermost loop}.
+We could perform scalar replacement on this dependency edge to eliminate load.
+
+In \cref{lst:ck94-register-variant-replaced}, two temporary \texttt{old} values
+have been created to cache the values of $A[i][j-2], A[i][j-1]$, one extra
+\texttt{current} value is created to cache the current $A[i][j]$ value.
+
+So we need $\mathbf{d}_{N} + 1 = 2 + 1 = 3$ temporary values (registers).
+
+\begin{figure}[H]
+  \centering
+  \begin{minipage}[t]{\textwidth}
+\begin{lstlisting}[language=C,
+  caption={Original loop with a variant reference},
+  label={lst:ck94-register-variant-original}]
+for (int i = 1; i < M; i++) {
+  for (int j = 2; j < N; j++) {
+    A[i][j] /* W */ = i + j;
+    B[i][j] = A[i-1][j-2] /* V */ + 1;
+  }
+}
+\end{lstlisting}
+  \end{minipage}
+  \par\medskip
+  \begin{minipage}[t]{0.48\textwidth}
+\begin{lstlisting}[language=C, basicstyle=\ttfamily\scriptsize,
+  caption={Variant-reference loop after unrolling},
+  label={lst:ck94-register-variant-unrolled}]
+for (int i = 1; i < M; i += 2) {
+  for (int j = 2; j < N; j++) {
+    /* Original */
+    A[i][j] /* W0 */ = i + j;
+    B[i][j] = A[i-1][j-2] /* V0 */ + 1;
+    /* Unrolled */
+    A[i+1][j] /* W1 */ = i + 1 + j;
+    B[i+1][j] = A[i][j-2] /* V1 */ + 1;
+  }
+}
+\end{lstlisting}
+  \end{minipage}%
+  \hfill
+  \begin{minipage}[t]{0.48\textwidth}
+\begin{lstlisting}[language=C, basicstyle=\ttfamily\scriptsize,
+  caption={Unrolled loop after scalar replacement},
+  label={lst:ck94-register-variant-replaced}]
+for (int i = 1; i < M; i += 2) {
+  double old1 = A[i][0];
+  double old2 = A[i][1];
+  for (int j = 2; j < N; j++) {
+    double current = i + j;
+    B[i][j] = A[i-1][j-2] + 1;
+    A[i+1][j] = i + 1 + j;
+    /* eliminated load */
+    B[i+1][j] = old1 + 1;
+    /* shift values */
+    old1 = old2;
+    old2 = current;
+  }
+}
+\end{lstlisting}
+  \end{minipage}
+  \caption{Unrolling and scalar replacement for a variant reference.}
+  \label{fig:ck94-variant-register-example}
+\end{figure}
+
+
+\begin{equation}
+  R^{C}_{r}(\mathbf{X}) =
+  \sum_{v \in V^{C}_{r}} \left(
+    \left(\prod_{1 \le i < N}
+      \left(X_{i} - \mathbf{d}_{i}(e_{v})\right)^{+}\right)
+    \cdot \left(\mathbf{d}_{N}(e_{v}) + 1\right)
+    \right)
+\end{equation}
+
+\subsubsection{General Case: Multi-edge References}
+
+
+\subsection{Invariant References}
+For an invariant reference, \textit{repeated uses can share the one retained 
+value}. Hence the register count depends on \textit{how many distinct values the
+unrolled body needs}, not how many iterations that seperates the uses as opposed
+to variant references.
+
+\subsubsection{Spetial Case: Single-edge References}
+When unroll loop $\lambda_i$ by factor $X_i$, we consider the following cacse.
+
+\paragraph{Case $\neg Invar(v, \lambda_i)$} When the reference is variant with
+the unrolling loop, \todo{}
+\begin{figure}[H]
+  \centering
+  \begin{minipage}[t]{0.48\textwidth}
+\begin{lstlisting}[language=C, basicstyle=\ttfamily\scriptsize,
+  aboveskip=2pt, belowskip=2pt,
+  caption={Repeated reads of A with $j$ advanced by two},
+  label={lst:ck94-reg-invar-variant-j-step-two}]
+for (int i = 0; i < M; i++) {
+  for (int j = 0; j < N; j += 2) {
+    use(A[i]);
+    use(A[i]);
+  }
+}
+\end{lstlisting}
+  \end{minipage}%
+  \hfill
+  \begin{minipage}[t]{0.48\textwidth}
+\begin{lstlisting}[language=C, basicstyle=\ttfamily\scriptsize,
+  aboveskip=2pt, belowskip=2pt,
+  caption={Cached reads of A after unrolling $i$},
+  label={lst:ck94-reg-invar-variant-i-unrolled-cached}]
+for (int i = 0; i < M; i += X1) {
+  t_0 = A[i]; /* ... */ t_X1 = A[i];
+  for (int j = 0; j < N; j += 2) {
+    use(t_0); /* ... */ use(t_X1);
+    use(t_0); /* ... */ use(t_X1);
+  }
+}
+\end{lstlisting}
+  \end{minipage}
+  \caption{Caching repeated $A[i]$ reads after unrolling the outer loop.}
+  \label{fig:ck94-reg-invar-variant}
+\end{figure}
+
+\paragraph{Case $Invar(v, \lambda_i) \land 
+\exists j < N: \left(Invar(v, \lambda_j) \land X_{j} > 1\right)$} Hello
+
+\begin{figure}[H]
+  \centering
+  \begin{minipage}[t]{0.48\textwidth}
+\begin{lstlisting}[language=C, basicstyle=\ttfamily\scriptsize,
+  aboveskip=2pt, belowskip=2pt,
+  caption={Reads of A with $j$ advanced by two},
+  label={lst:ck94-reg-invar-outer-j-step-two}]
+for (int i = 0; i < N1; i++) {
+  for (int j = 0; j < N2; j += 2) {
+    for (int k = 0; k < N3; k++) {
+      use(A[k]); use(A[k]);
+    }
+  }
+}
+\end{lstlisting}
+  \end{minipage}%
+  \hfill
+  \begin{minipage}[t]{0.48\textwidth}
+\begin{lstlisting}[language=C, basicstyle=\ttfamily\scriptsize,
+  aboveskip=2pt, belowskip=2pt,
+  caption={Shared value from A after unrolling $i$},
+  label={lst:ck94-reg-invar-outer-i-unrolled-shared}]
+for (int i = 0; i < N1; i += X1) { 
+  for (int j = 0; j < N2; j += 2) {
+    for (int k = 0; k < N3; k++) {
+      t = A[k];
+      use(t); use(t);
+      /* ... */
+      use(t); use(t);
+    }
+  }
+}
+\end{lstlisting}
+  \end{minipage}
+  \caption{Sharing an $A[k]$ read across copies of the outer loop.}
+  \label{fig:ck94-reg-invar-outer}
+\end{figure}
+
+\paragraph{Case $Invar(v, \lambda_i) \land Invar(v, \lambda_N)$} Hello
+\begin{figure}[H]
+  \centering
+  \begin{minipage}[t]{0.48\textwidth}
+\begin{lstlisting}[language=C, basicstyle=\ttfamily\scriptsize,
+  aboveskip=2pt, belowskip=2pt,
+  caption={Reads of A with $k$ advanced by two},
+  label={lst:ck94-reg-invar-inner-k-step-two}]
+for (int i = 0; i < N1; i++) { 
+  for (int j = 0; j < N2; j++) {
+    for (int k = 0; k < N3; k += 2) {
+      use(A[j]); use(A[j]);
+    }
+  }
+}
+\end{lstlisting}
+  \end{minipage}%
+  \hfill
+  \begin{minipage}[t]{0.48\textwidth}
+\begin{lstlisting}[language=C, basicstyle=\ttfamily\scriptsize,
+  aboveskip=2pt, belowskip=2pt,
+  caption={Load from A hoisted after unrolling $i$},
+  label={lst:ck94-reg-invar-inner-i-unrolled-hoisted}]
+for (int i = 0; i < N1; i += X1) {
+  for (int j = 0; j < N2; j++) {
+    t = A[j];
+    for (int k = 0; k < N3; k++) {
+      use(t); use(t);
+      /* ... */
+      use(t); use(t);
+    }
+  }
+}
+\end{lstlisting}
+  \end{minipage}
+  \caption{Hoisting an $A[j]$ read out of the innermost loop.}
+  \label{fig:ck94-reg-invar-inner}
+\end{figure}
+
+\paragraph{Other cases} Not considered for scalar replacement
+% \begin{figure}[H]
+%   \centering
+%   \begin{minipage}[t]{0.72\textwidth}
+% \begin{lstlisting}[language=C, basicstyle=\ttfamily\scriptsize,
+%   aboveskip=2pt, belowskip=2pt,
+%   caption={Read invariant only in the middle loop},
+%   label={lst:ck94-reg-invar-middle-only}]
+% for (int i = 0; i < N1; i++) { 
+%   for (int j = 0; j < N2; j++) {
+%     for (int k = 0; k < N3; k++) { /* <- invariant */
+%       use(A[i][k]);
+%     }
+%   }
+% }
+% \end{lstlisting}
+%   \end{minipage}
+%   \caption{An invariant reference not covered by the preceding cases.}
+%   \label{fig:ck94-reg-invar-other}
+% \end{figure}
+
+\paragraph{}
+Let $\alpha(v, i; \mathbf{X})$ denote the nubmer of registers needed to do
+scalar replacement after expanding loop $\lambda_i$ by $X_i$, given the
+unrolling factor of other loops $\mathbf{X}$.
+\begin{equation}
+  \alpha(v, i; \mathbf{X}) = 
+  \begin{cases}
+    X_i &\text{if } \neg Invar(v, \lambda_i) \\
+    1 &\text{if } \left(\exists j < N: Invar(v, \lambda_j) \land X_j > 1\right)
+           \lor \left(Invar(v,\lambda_N)\right)
+           \footnote{This is an else-if condition where $Invar(v, \lambda_i)$ is
+           assumed.}
+           \\
+    0 &\text{Otherwise}
+  \end{cases}
+  \label{eq:}
+\end{equation}
+
+For a given reference, we can model the number of registers needed after
+unroll-and-jam and scalar replacement by 
+\cref{eq:reg-invariant-total-to-ref}
+\begin{equation}
+  \prod_{1 \le i \le N} \alpha(v, i; \mathbf{X}) 
+  \label{eq:reg-invariant-total-to-ref}
+\end{equation}
+
+Notice in \cref{eq:reg-invariant-total-to-ref}, the "otherwise" case
+produces 0, which results a total of 0 in the product. This means that in the
+specific case of analysing registers added after scalar replacement for
+invariant references, as long as $\mathbf{G}(v, \mathbf{X})$ is not satisfied.
+\begin{equation}
+  \begin{aligned}
+    1 - \mathbf{G}(v \in V^{I}_{r}, \mathbf{X}) &\coloneqq
+    \left(
+      \begin{aligned}
+        \exists 1 \le i \le N:\quad & Invar(v, \lambda_i) \\
+          & {}\land \neg Invar(v, \lambda_N) \\
+          & {}\land \left(
+            \begin{aligned}
+              \forall j < N:\quad & \neg Invar(v, \lambda_j) \\
+                & {}\lor (Invar(v, \lambda_j) \land X_j = 1)
+            \end{aligned}
+          \right)
+      \end{aligned}
+    \right) \\
+    &\equiv
+    \left(
+      \begin{aligned}
+        &(\exists 1 \le i \le N:\, Invar(v, \lambda_i)) \\
+        &{}\land \neg Invar(v, \lambda_N) \\
+        &{}\land (\forall j < N:\, Invar(v, \lambda_j) \implies X_j = 1)
+      \end{aligned}
+    \right) \\
+    &\overset{(*)}{\equiv}
+    \left(
+      \begin{aligned}
+        &\neg Invar(v, \lambda_N) \\
+        &{}\land \forall j < N:\, (Invar(v, \lambda_j) \implies X_j = 1)
+      \end{aligned}
+    \right)
+  \end{aligned}
+  \label{eq:reg-invar-ref-cond}
+\end{equation}
+Here, $(*)$ uses the assumption
+$v \in V^{I}_{r} \implies \exists i:\, Invar(v, \lambda_i)$. 
+
+\Cref{eq:reg-invar-ref-cond} shows that, if a loop is variant to the innermost
+loop and for every of its invariant loops, we choose not to unroll, then there
+is no opportunity for the scalar replacement to reduce any memory access (by
+caching values in a register), as illustrated by
+\cref{lst:ck94-no-scalar-replacement}.
+
+\begin{lstlisting}[language=C,
+  caption={Reference varying in the innermost loop},
+  label={lst:ck94-no-scalar-replacement}]
+for (int i = 0; i < M; i++) { /* <- no unrolling for its invariant loop */
+  for (int j = 0; j < N; j++) { /* <- variant w.r.t. innermost loop */ 
+    use(A[j]); /* introducing register does NOT reduce memory access */
+  }
+}
+\end{lstlisting}
+

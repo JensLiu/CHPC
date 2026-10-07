@@ -1,0 +1,79 @@
+\chapter{Background and Mathematical Model}
+\label{chap:background}
+
+
+We will use a unified notation for concepts across \todo{ref all papers}.
+
+
+
+% ---------------- Template Examples ---------------------
+% \section{Notation and array accesses}
+% Use inline mathematics for short expressions, such as a loop index
+% $\vect{i}\in\Z^n$, and displayed equations for derivations. An affine access
+% function can be written as
+% \begin{equation}
+%   \vect{a}(\vect{i}) = H\vect{i} + \vect{c},
+%   \qquad H\in\Z^{m\times n},\quad\vect{c}\in\Z^m.
+%   \label{eq:affine-access}
+% \end{equation}
+% Here, $\vect{a}$ denotes array subscripts rather than a byte address; converting
+% subscripts to an address also depends on element size and storage layout.
+%
+% \begin{definition}[Temporal and spatial locality]
+% Temporal locality concerns accesses to data used recently. Spatial locality
+% concerns accesses to nearby memory locations, which may share a cache line.
+% \end{definition}
+%
+% \begin{table}[htbp]
+%   \centering
+%   \caption{Notation used in the illustrative model.}
+%   \label{tab:notation}
+%   \begin{tabularx}{\textwidth}{lY}
+%     \toprule
+%     Symbol & Meaning \\
+%     \midrule
+%     $\vect{i}$ & Integer iteration vector \\
+%     $H$, $\vect{c}$ & Array-access matrix and constant offset \\
+%     $L$ & Cache-line size in bytes \\
+%     $C$ & Available cache capacity in bytes \\
+%     $e$ & Element size in bytes \\
+%     $N$, $B$ & Matrix dimension and tile dimension, respectively \\
+%     \bottomrule
+%   \end{tabularx}
+% \end{table}
+%
+% \section{An illustrative cost model}
+% For demonstration, average access time may be expressed as
+% \begin{align}
+%   T_{\mathrm{avg}}
+%     &= T_{\mathrm{hit}} + p_{\mathrm{miss}}T_{\mathrm{penalty}},
+%     \label{eq:access-time}\\
+%   p_{\mathrm{miss}}
+%     &= \frac{M}{A}, \qquad A>0,
+%     \label{eq:miss-rate}
+% \end{align}
+% where $M$ is the number of misses and $A$ is the number of accesses for the
+% cache level being modelled. The miss penalty is additional to the hit time.
+% \Cref{eq:access-time} is a simplified explanatory model; it does not
+% capture overlapping misses, prefetching, or a complete cache hierarchy.
+%
+% For a rough capacity estimate, three dense $B\times B$ tiles of elements of size
+% $e$ require
+% \begin{equation}
+%   W(B) = 3eB^2 \leq \alpha C, \qquad 0<\alpha<1.
+%   \label{eq:tile-capacity}
+% \end{equation}
+% The factor $\alpha$ leaves room for other data. This estimate alone does not
+% account for cache conflicts or establish an optimal tile size.
+%
+% \section{Transformation notation}
+% A matrix representation is convenient when discussing loop transformations.
+% For example, interchanging two loop dimensions can be represented by
+% \begin{equation}
+%   \vect{i}' = U\vect{i}, \qquad
+%   U = \begin{bmatrix}0 & 1 \\ 1 & 0\end{bmatrix}.
+%   \label{eq:interchange}
+% \end{equation}
+% \todo{Add dependence constraints and explain the legality conditions used by
+% your selected papers; see \citet{wolfLam1991parallel} for the transformation-theory
+% paper in the reading list.}

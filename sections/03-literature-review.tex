@@ -1,0 +1,50 @@
+\chapter{Literature Review}
+\label{chap:literature}
+
+\section{A consistent review structure}
+For each paper, explain the problem, the program and machine assumptions, the
+analysis or cost model, the transformation strategy, and the evaluation evidence.
+Distinguish the authors' claims from your own interpretation.
+\citet{carrMckinleyTseng1994} is an additional starting point from the reading list.
+
+\subsection{Paper review: Wolf and Lam (1991)}
+\begin{description}
+  \item[Problem.] \todo{State the locality problem the paper addresses.}
+  \item[Representation.] \todo{Describe the reuse and dependence representations.}
+  \item[Algorithm.] \todo{Explain the transformation choices and their ordering.}
+  \item[Evidence.] \todo{Identify benchmarks, hardware, baselines, and results.}
+  \item[Limitations.] \todo{Discuss assumptions and cases outside the model.}
+\end{description}
+For a specific claim, provide a pinpoint citation, for example:
+\citep[Section~2]{wolfLam1991locality}. Check the section or page number in the
+paper before using it in your final prose.
+
+\section{Comparing the papers}
+\Cref{tab:paper-comparison} demonstrates a comparison table. Its review
+prompts are placeholders rather than completed findings.
+
+\begin{table}[htbp]
+  \centering
+  \small
+  \caption{A framework for comparing selected papers; entries are review prompts.}
+  \label{tab:paper-comparison}
+  \begin{tabularx}{\textwidth}{@{}p{0.29\textwidth}YYY@{}}
+    \toprule
+    Paper & Representation & Profitability & Evidence \\
+    \midrule
+    Wolf and Lam \citep{wolfLam1991locality}
+      & Describe reuse model & Explain objective & Record evaluation \\
+    McKinley et al.\ \citep{mckinleyCarrTseng1996}
+      & Describe access model & Explain cost model & Record evaluation \\
+    Wolf et al.\ \citep{wolfMaydanChen1996}
+      & Describe candidates & Explain machine model & Record evaluation \\
+    Carr \citep{carr1996}
+      & Describe loop model & Explain combined metric & Record evaluation \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+\section{Critical synthesis}
+\todo{Compare the approaches by theme rather than summarising papers in
+isolation. Explain where their assumptions or objectives differ, and whether
+their experimental results are directly comparable.}

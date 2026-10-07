@@ -1,0 +1,46 @@
+\chapter{Evaluation Methodology}
+\label{chap:evaluation}
+
+\section{Experimental setup}
+If the assignment is a literature review, use this chapter to compare the
+evaluation methods in the papers. If you run experiments, record at least:
+\begin{itemize}
+  \item CPU model, cache hierarchy, operating system, compiler version, and flags;
+  \item input sizes, storage layout, initialisation, and correctness criteria;
+  \item repetitions, summary statistics, and warm-up policy;
+  \item timing boundaries and the exact meaning of any hardware counters.
+\end{itemize}
+Keep allocation and initialisation outside the timed region unless they are
+part of the operation being evaluated. Explain how you prevent the compiler
+from removing work whose output is never used.
+
+\section{Presenting results}
+For a baseline time $t_b$ and an optimised time $t_o$, define speedup as
+\begin{equation}
+  S = \frac{t_b}{t_o}, \qquad t_o>0.
+  \label{eq:speedup}
+\end{equation}
+Values above one indicate a shorter execution time. \Cref{tab:results}
+uses deliberately synthetic values to illustrate units, alignment, and captions.
+These values are not measurements or results from the cited papers.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Formatting example only: synthetic execution times and speedups.}
+  \label{tab:results}
+  \begin{tabular}{lrrr}
+    \toprule
+    Variant & Time (ms) & Speedup & Repetitions \\
+    \midrule
+    Baseline & 120.0 & $1.00\times$ & 10 \\
+    Interchanged & 80.0 & $1.50\times$ & 10 \\
+    Tiled & 60.0 & $2.00\times$ & 10 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\section{Threats to validity}
+\todo{Discuss measurement variability, input selection, compiler-generated
+transformations, cache warm-up, and whether the hardware represents the setting
+you want to study. For a literature review, explain differences in experimental
+conditions across papers.}

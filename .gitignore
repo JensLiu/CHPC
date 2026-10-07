@@ -1,0 +1,26 @@
+# Generated LaTeX files. Keep .tex, .bib, code, and source figures tracked.
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.synctex
+*.synctex.gz
+*.synctex(busy)
+*.synctex.gz(busy)
+*.toc
+*.lof
+*.lot
+*.lol
+
+# Compiled report only: PDFs under figures/ are source assets.
+/main.pdf
+/main.dvi
+/main.ps
+
+# Local build directories, if used.
+/build/
+/output/
+/tmp/

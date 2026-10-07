@@ -1,0 +1,139 @@
+% Encoding and typography: pdfLaTeX, with no shell escape or external highlighter.
+\usepackage[utf8]{inputenc}
+\usepackage{textcomp}
+% Latin Modern gives scalable T1 fonts. Minimal TeX installations can fall back
+% to the bundled scalable Computer Modern fonts with OT1 encoding.
+\IfFileExists{lmodern.sty}{%
+  \usepackage[T1]{fontenc}\usepackage{lmodern}%
+}{\usepackage[OT1]{fontenc}}
+\usepackage{microtype}
+\usepackage[a4paper,margin=28mm,headheight=15pt]{geometry}
+\usepackage{setspace}
+\setstretch{1.08}
+
+% Compact bullet lists; individual lists can override these defaults.
+\usepackage{enumitem}
+\setlist[itemize]{
+  itemsep=2pt,
+  topsep=4pt,
+  parsep=0pt,
+  partopsep=0pt
+}
+
+% Mathematics, aligned derivations, matrices, and theorem-like environments.
+\usepackage{amsmath,amssymb,mathtools,amsthm}
+\usepackage{extarrows}
+\numberwithin{equation}{section}
+\newtheorem{definition}{Definition}[chapter]
+\newtheorem{proposition}[definition]{Proposition}
+\theoremstyle{remark}
+\newtheorem{remark}[definition]{Remark}
+\DeclareMathOperator{\rank}{rank}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\vect}[1]{\boldsymbol{#1}}
+
+% Figures, side-by-side panels, and tables (including tables spanning pages).
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{booktabs,array,tabularx,longtable}
+\graphicspath{{figures/}}
+\captionsetup{font=small,labelfont=bf}
+\captionsetup[subfigure]{font=small}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+
+% Colours and code: listings supports C, C++, Python, Fortran, and many others.
+\usepackage{xcolor}
+\definecolor{reportblue}{HTML}{214E70}
+\definecolor{codebackground}{HTML}{F5F7F9}
+\definecolor{codecomment}{HTML}{42704D}
+\definecolor{codestring}{HTML}{8B3D59}
+\definecolor{rulegrey}{HTML}{D4DBE0}
+\usepackage{listings}
+\lstdefinestyle{reportcode}{
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{reportblue}\bfseries,
+  commentstyle=\color{codecomment}\itshape,
+  stringstyle=\color{codestring},
+  backgroundcolor=\color{codebackground},
+  rulecolor=\color{rulegrey},
+  frame=single,framerule=0.4pt,
+  numbers=left,numberstyle=\tiny\color{gray},numbersep=8pt,
+  breaklines=true,breakatwhitespace=true,
+  columns=fullflexible,keepspaces=true,
+  showstringspaces=false,tabsize=4,
+  captionpos=b,aboveskip=1em,belowskip=1em,
+  xleftmargin=1.5em,framexleftmargin=0.5em,
+  upquote=true
+}
+\lstset{style=reportcode,language=C}
+% An alternate environment allows examples containing \end{lstlisting}.
+\lstnewenvironment{latexexample}{\lstset{language=TeX,numbers=none}}{}
+\renewcommand{\lstlistingname}{Listing}
+\renewcommand{\lstlistlistingname}{List of Listings}
+
+% References: a standard BibTeX workflow; use \citet and \citep in prose.
+\usepackage[numbers,square,sort&compress]{natbib}
+\usepackage{url}
+\urlstyle{same}
+\usepackage[
+  colorlinks=true,
+  linkcolor=reportblue,citecolor=reportblue,urlcolor=reportblue,
+  bookmarksnumbered=true,
+  pdfdisplaydoctitle=true
+]{hyperref}
+\hypersetup{
+  pdftitle={\ReportTitle: \ReportSubtitle},
+  pdfauthor={\ReportAuthor},
+  pdfsubject={\ReportCourse},
+  pdfkeywords={compiler optimisation, data locality, cache, loop transformations}
+}
+% Smart cross-references: infer the object type and link its name and number.
+% Load after hyperref; a project-local cleveref.sty is bundled for portability.
+\usepackage[nameinlink,noabbrev]{cleveref}
+\crefname{listing}{listing}{listings}
+\Crefname{listing}{Listing}{Listings}
+
+% Running headers and page numbers. Chapter opening pages use the plain style.
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\ReportShortTitle}
+\fancyhead[R]{\small\nouppercase{\leftmark}}
+\fancyfoot[C]{\thepage}
+\renewcommand{\chaptermark}[1]{\markboth{\thechapter.\ #1}{}}
+\renewcommand{\headrulewidth}{0.4pt}
+\fancypagestyle{plain}{
+  \fancyhf{}
+  \fancyfoot[C]{\thepage}
+  \renewcommand{\headrulewidth}{0pt}
+}
+\setcounter{tocdepth}{1}
+\setcounter{secnumdepth}{2}
+\setlength{\emergencystretch}{2em}
+
+% Compact chapter headings suit a course report and leave room for examples.
+% Keep report-class numbering (including appendices), with no extra package.
+\makeatletter
+\renewcommand{\@makechapterhead}[1]{%
+  \vspace*{8pt}%
+  {\parindent\z@\raggedright\normalfont
+    \ifnum\c@secnumdepth>\m@ne
+      {\large\color{reportblue}\@chapapp\space\thechapter\par}%
+      \vskip8pt
+    \fi
+    \LARGE\bfseries #1\par\nobreak\vskip24pt
+  }}
+\renewcommand{\@makeschapterhead}[1]{%
+  \vspace*{8pt}%
+  {\parindent\z@\raggedright\normalfont
+    \LARGE\bfseries #1\par\nobreak\vskip24pt
+  }}
+\makeatother
+
+% Draft helpers. Replace all examples and TODOs before submitting.
+\newcommand{\todo}[1]{\textcolor{codestring}{\textbf{[TODO: #1]}}}
+\newcommand{\exampleparagraph}[1]{%
+  \begin{quote}\small\textbf{Template note.} #1\end{quote}}
